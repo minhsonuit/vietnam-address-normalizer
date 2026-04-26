@@ -4,8 +4,8 @@
 
 ## Current State
 
-- **Phase**: Initial implementation complete, batch-test issues fixed
-- **Status**: All 52 tests pass, batch output verified clean
+- **Phase**: V1.0.0 Published to NuGet successfully via GitHub Actions.
+- **Status**: All 78 tests pass, automated CI/CD pipeline active.
 - **Batch stats**: Total: 1019 | Changed: 322 | Unchanged: 697
 
 ## What Was Done
@@ -43,20 +43,21 @@ Expanded logic based on real-world edge cases (tests expanded from 52 to 65):
 
 ### Abbreviation Expansion & Extended Building Info (2026-04-26 session 4)
 
-Based on industry standards (e.g., libpostal, Mapzen), added logic to expand common Vietnamese administrative abbreviations to improve Geocoding match rates (tests expanded to 71/71):
+Based on industry standards (e.g., libpostal, Mapzen), added logic to expand common Vietnamese administrative abbreviations to improve Geocoding match rates (tests expanded to 78/78):
 1. **Stage 1.5 - Abbreviation Expansion**: Added regex to safely expand `Q1`/`Q.1` -> `Quận 1`, `P. 12` -> `Phường 12`, `TP` -> `Thành phố`, `TX` -> `Thị xã`, `TT` -> `Thị trấn`. Enabled by default via `ExpandAbbreviations = true`.
 2. **Extended Building Info**: Upgraded `RemoveBuildingInfo` logic to include `Chung cư`, `Căn hộ`, `Tòa nhà`, `KĐT`, `KDC`, `Khu tập thể` (e.g., `Khu đô thị Sala`, `Chung cư Vinhome`).
 
-## Pending Items
+### Documentation & Rule Set (2026-04-26 session 5)
+- Created `docs/rules/noise-patterns-logic.md` to formally document the 7 logical groups of address noise and the regex strategies used to sanitize them (Contact info, Instructions, Landmarks, Typos, Duplication, Building info, Postal codes).
+- Initialized Git repository and pushed initial commit to GitHub (`minhsonuit/vietnam-address-normalizer`).
 
-- [x] ~~Run `dotnet build` to verify compilation~~ ✅
-- [x] ~~Run `dotnet test` to verify all tests pass~~ ✅ (71/71)
-- [x] ~~Fine-tune regex patterns based on real-world data testing~~ ✅ (batch round 2 + expanded patterns + abbreviation expansion)
-- [x] ~~Run batch test with production address data~~ ✅ (1019 addresses)
-- [ ] Verify NuGet pack succeeds: `dotnet pack src/VnAddressSanitizer -c Release`
-- [ ] Git init and first commit
-- [ ] Publish to NuGet (when ready)
-- [ ] Consider additional patterns from new real-world datasets
+### CI/CD & Publishing (2026-04-26 session 6)
+- Created GitHub Actions Workflow (`.github/workflows/publish.yml`) to automatically test, build, pack, and push the package to NuGet.org on branch `main` pushes or manual triggers.
+- Verified NuGet package successfully published.
+
+## Future Maintenance
+
+- [ ] Consider additional patterns from new real-world datasets as they arise.
 
 ## Touched Files
 
