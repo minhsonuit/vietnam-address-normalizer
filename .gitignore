@@ -1,0 +1,31 @@
+# .gitignore for .NET NuGet Package Project
+
+## Build outputs
+bin/
+obj/
+out/
+
+## NuGet
+*.nupkg
+*.snupkg
+*.nuspec
+.nuget/
+
+## IDE
+.vs/
+.vscode/
+*.user
+*.suo
+*.sln.docstates
+.idea/
+
+## OS files
+.DS_Store
+Thumbs.db
+
+## Test results
+TestResults/
+*.trx
+
+## Runner output
+*_output.txt
