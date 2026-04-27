@@ -13,11 +13,14 @@ internal static class SanitizePatterns
 
     // ─── Stage 0: Abbreviation Expansion ─────────────────────────────────
 
+    private const string RoomPrefixes = @"(?:block|tower|khu|tòa|toa|tòa\s*nhà|toa\s*nha|nhà|nha|tầng|tang|lầu|lau|phòng|phong|căn|can|căn\s*hộ|can\s*ho|ch|lô|lo|khu\s*nhà|khu\s*nha|khu\s*phố|khu\s*pho|kp)";
+    private const string RoomLookbehind = @"(?<!\b" + RoomPrefixes + @"(?:\s+[A-Za-z0-9\-]+)?(?:[,.\-]\s*|\s+))";
+
     /// <summary>Expands 'Q' followed by number to 'Quận X' (e.g. Q1, Q.1)</summary>
-    internal static readonly Regex AbbrQuanNumber = new(@"\b(?:Q|q)[\.\s]*(\d+[A-Za-z]?)\b", DefaultOptions);
+    internal static readonly Regex AbbrQuanNumber = new(RoomLookbehind + @"\b(?:Q|q)[\.\s]*(\d+[A-Za-z]?)\b", DefaultOptions);
 
     /// <summary>Expands 'P' followed by number to 'Phường X' (e.g. P12, P. 12)</summary>
-    internal static readonly Regex AbbrPhuongNumber = new(@"\b(?:P|p)[\.\s]*(\d+[A-Za-z]?)\b", DefaultOptions);
+    internal static readonly Regex AbbrPhuongNumber = new(RoomLookbehind + @"\b(?:P|p)[\.\s]*(\d+[A-Za-z]?)\b", DefaultOptions);
 
     /// <summary>Expands 'TP' to 'Thành phố'</summary>
     internal static readonly Regex AbbrThanhPho = new(@"\b(?:TP|Tp|tp)[\.\s]+(?=\p{L})", DefaultOptions);
@@ -63,40 +66,32 @@ internal static class SanitizePatterns
 
     // ─── Stage 3c: Delivery / Contact / Order Instructions ───────────────
 
+    private const string NoiseBoundary = @"(?=[,.;-]|\b(?:ấp|ap|thôn|thon|xã|xa|phường|phuong|quận|quan|huyện|huyen|tỉnh|tinh|tp)\b|\b\d{1,5}(?:(?![hHpPkK]\b)[A-Za-z]|/\d+)*\s+(?!h\b|giờ\b|gio\b|phút\b|phut\b|ngày\b|ngay\b|tháng\b|thang\b|năm\b|nam\b|k\b|ngàn\b|ngan\b|đồng\b|dong\b|vnd\b|vnđ\b|cái\b|cai\b|chiếc\b|chiec\b|người\b|nguoi\b|cuốn\b|cuon\b|hộp\b|hop\b|kg\b|g\b|lít\b|lit\b|ml\b)|$)";
+    private const string AddressPrefixes = @"(?:đường|duong|hẻm|hem|ngõ|ngo|ngách|ngach|kiệt|kiet|phường|phuong|quận|quan|xã|xa|thôn|thon|ấp|ap|khu)";
+
     /// <summary>
     /// Removes delivery and contact instruction phrases.
-    /// IMPORTANT: "giao" is only matched with its companion words to prevent
-    /// false positives like "Đường Thuận Giao 25".
+    /// IMPORTANT: Uses NoiseBoundary to avoid eating into the actual address when punctuation is missing.
     /// </summary>
     internal static readonly Regex Instructions = new(
+        @"(?<!\b" + AddressPrefixes + @"\s+)" +
         @"(?:" +
-            // đừng gọi / dung goi — greediest pattern first, eat everything up to comma
-            @"(?:đừng|dung)\s+(?:gọi|goi)[^,]*" +
-            // gọi + companion patterns (với dấu và không dấu)
-            @"|(?:gọi|goi)\s+(?:số|so|cho|này|nay|giúp|giup|dùm|dum|trước|truoc|trươc|điện|dien|lại|lai)[^,]*" +
-            @"|(?:call)\s+(?:trước|truoc|trươc|khi)[^,]*" +
-            // nhận hàng dùm / nhan hang dum
-            @"|(?:nhận\s+hàng|nhan\s+hang)\s+(?:dùm|dum|giúp|giup)[^,]*" +
-            // liên hệ / lien he
-            @"|(?:liên\s*hệ|lien\s*he)[^,]*" +
-            // giao + companion (not standalone "giao")
-            @"|(?:giao)\s+(?:cho|tới|toi|đến|den|hàng|hang|giúp|giup|cổng|cong|tại|tai|ở|o\b)[^,]*" +
-            // ship patterns
-            @"|(?:ship|book\s*ship)\s+(?:tới|toi|đến|den|cho|về|ve)[^,]*" +
-            // address label patterns
-            @"|(?:địa\s*chỉ|dia\s*chi|đ/c|dc|nơi\s*giao|noi\s*giao)\s*[:：]\s*" +
-            // delivery placement and reception instructions
-            @"|(?:để|de|bỏ|bo)\s+(?:trước|truoc|trươc|ở|o\b|tại|tai|ngoài|ngoai)[^,]*" +
-            @"|(?:gửi|gui)\s+(?:bảo\s*vệ|bao\s*ve|lễ\s*tân|le\s*tan|ở|o\b|tại|tai|cho)[^,]*" +
-            @"|(?:nhận\s*hộ|nhan\s*ho)[^,]*" +
-            // time-based instructions
-            @"|(?:giao\s*)?(?:trong\s*|ngoài\s*|ngoai\s*)?(?:giờ\s*hành\s*chính|gio\s*hanh\s*chinh|giờ\s*hc|gio\s*hc)[^,]*" +
-            // order patterns - eat to end of segment or next comma
-            @"|(?:mã\s*đơn|ma\s*don|đơn\s*hàng|don\s*hang)[^,]*" +
-            // thank you
-            @"|(?:cảm\s*ơn|cam\s*on|thanks|thank|tks)[^,]*" +
-            // misc instruction keywords
-            @"|(?:chọn\s+địa\s+điểm|chon\s+dia\s+diem)[^,]*" +
+            @"(?:đừng|dung)\s+(?:gọi|goi).*?" + NoiseBoundary +
+            @"|(?:gọi|goi)\s+(?:số|so|cho|này|nay|giúp|giup|dùm|dum|trước|truoc|trươc|điện|dien|lại|lai).*?" + NoiseBoundary +
+            @"|(?:call)\s+(?:trước|truoc|trươc|khi).*?" + NoiseBoundary +
+            @"|(?:nhận\s+hàng|nhan\s+hang)\s+(?:dùm|dum|giúp|giup).*?" + NoiseBoundary +
+            @"|(?:liên\s*hệ|lien\s*he).*?" + NoiseBoundary +
+            @"|(?:(?:chỉ\s*)?giao)\s+(?:cho|tới|toi|đến|den|hàng|hang|giúp|giup|cổng|cong|tại|tai|ở|o\b|buổi|buoi|lúc|luc|ngoài|ngoai).*?" + NoiseBoundary +
+            @"|(?:ship|book\s*ship)\s+(?:tới|toi|đến|den|cho|về|ve).*?" + NoiseBoundary +
+            @"|(?:địa\s*chỉ|dia\s*chi|đ/c|dc|nơi\s*giao|noi\s*giao)\s*[:：].*?" + NoiseBoundary +
+            @"|(?:để|de|bỏ|bo)\s+(?:trước|truoc|trươc|ở|o\b|tại|tai|ngoài|ngoai).*?" + NoiseBoundary +
+            @"|(?:gửi|gui)\s+(?:bảo\s*vệ|bao\s*ve|lễ\s*tân|le\s*tan|ở|o\b|tại|tai|cho).*?" + NoiseBoundary +
+            @"|(?:nhận\s*hộ|nhan\s*ho).*?" + NoiseBoundary +
+            @"|(?:(?:chỉ|chi|khi|trưa|trua|tối|toi|sáng|sang|chiều|chieu)\s*)?(?:đến|den|nhận|nhan)\s+(?:hàng|hang).*?" + NoiseBoundary +
+            @"|(?:giao\s*)?(?:trong\s*|ngoài\s*|ngoai\s*)?(?:giờ\s*hành\s*chính|gio\s*hanh\s*chinh|giờ\s*hc|gio\s*hc).*?" + NoiseBoundary +
+            @"|(?:mã\s*đơn|ma\s*don|đơn\s*hàng|don\s*hang).*?" + NoiseBoundary +
+            @"|(?:cảm\s*ơn|cam\s*on|thanks|thank|tks).*?" + NoiseBoundary +
+            @"|(?:chọn\s+địa\s+điểm|chon\s+dia\s+diem).*?" + NoiseBoundary +
             @"|(?:có\s+định\s+vị|co\s+dinh\s+vi)" +
         @")",
         DefaultOptions);
@@ -104,12 +99,12 @@ internal static class SanitizePatterns
     // ─── Stage 3d: Direction / Landmark Notes ────────────────────────────
 
     /// <summary>
-    /// Removes direction and landmark notes, allowing 1-5 trailing words.
+    /// Removes direction and landmark notes.
     /// Must be after a separator (comma, dash, semicolon) or at start of string
     /// to reduce false positives.
     /// </summary>
     internal static readonly Regex DirectionNotes = new(
-        @"(?<sep>,\s*|-\s*|;\s*)" +
+        @"(?:[,;.\-]\s*|^)" +
         @"(?:" +
             @"(?:gần|gan|gàn)" +
             @"|(?:đối\s*diện|doi\s*dien)" +
@@ -123,15 +118,9 @@ internal static class SanitizePatterns
             @"|(?:cạnh|canh)" +
             @"|(?:kế\s*bên|ke\s*ben)" +
             @"|(?:bên\s*hông|ben\s*hong)" +
-            @"|(?:next\s+to)" +
-            @"|(?:opposite)" +
-            @"|(?:behind)" +
-            @"|(?:near)" +
-            @"|(?:across\s+from)" +
-            @"|(?:in\s+front\s+of)" +
-            @"|(?:beside)" +
+            @"|(?:(?:next\s+to|opposite|behind|near|across\s+from|in\s+front\s+of|beside)(?!\s+(?:East|West|North|South|House|Tower|Garden|Plaza|Center|Building|Apt|Apartment)\b))" +
         @")" +
-        @"(?:\s+(?![,;-]\s*)[^,;-]+){0,3}",
+        @".*?" + NoiseBoundary,
         DefaultOptions);
 
     // ─── Stage 3e: Postal Codes and Country Name ─────────────────────────
@@ -198,7 +187,7 @@ internal static class SanitizePatterns
     internal static readonly Regex SpaceAroundSeparator = new(@"\s*([,;])\s*", DefaultOptions);
 
     /// <summary>Strips leading punctuation and whitespace.</summary>
-    internal static readonly Regex LeadingPunctuation = new(@"^[\s,\-;:]+", DefaultOptions);
+    internal static readonly Regex LeadingPunctuation = new(@"^[\s,\-;:\.]+", DefaultOptions);
 
     /// <summary>Strips trailing junk characters.</summary>
     internal static readonly Regex TrailingJunk = new(@"[\s,\-;:#?./]+$", DefaultOptions);

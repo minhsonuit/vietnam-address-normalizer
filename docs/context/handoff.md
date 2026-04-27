@@ -1,6 +1,6 @@
 # Handoff — VnAddressSanitizer
 
-> Last updated: 2026-04-26T15:48+07:00
+> Last updated: 2026-04-26T23:32+07:00
 
 ## Current State
 
@@ -55,6 +55,13 @@ Based on industry standards (e.g., libpostal, Mapzen), added logic to expand com
 - Created GitHub Actions Workflow (`.github/workflows/publish.yml`) to automatically test, build, pack, and push the package to NuGet.org on branch `main` pushes or manual triggers.
 - Verified NuGet package successfully published.
 
+### Regex Edge Case Fixes (2026-04-26 session 8)
+- Fixed Abbreviation Collisions: Added negative lookbehinds in `AbbrQuanNumber`/`AbbrPhuongNumber` to prevent expanding `P12` and `Q1` when preceded by `Block`, `Tower`, etc.
+- Fixed Instruction False Positives: Added negative lookbehinds in `Instructions` regex to prevent stripping keywords (`Thank`, `Gửi bảo vệ`, `Nhận hộ`, etc.) when they immediately follow valid street indicators like `Đường`, `Hẻm`, `Phường`, etc.
+- Fixed English Landmark False Positives: Added negative lookahead to prevent English directions (`near`, `opposite`, `behind`) from destroying English proper nouns (e.g., `Near East Plaza`).
+- Fixed Start-of-String Landmark False Negatives: Added `^` anchor to `DirectionNotes` to properly remove landmark notes that appear at the very beginning of the address (e.g., `gần chợ Bến Thành, ...`).
+- Added 16 new test cases to `AddressSanitizerTests.cs` to ensure these regressions stay fixed. Tests passed: 94/94.
+
 ## Future Maintenance
 
 - [ ] Consider additional patterns from new real-world datasets as they arise.
@@ -71,3 +78,4 @@ Based on industry standards (e.g., libpostal, Mapzen), added logic to expand com
 - `tools/VnAddressSanitizer.Runner/VnAddressSanitizer.Runner.csproj`
 - `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `CODEX.md`
 - `README.md`, `.gitignore`
+- `sample-input-codeX.txt`

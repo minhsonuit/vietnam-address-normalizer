@@ -155,6 +155,9 @@ public class DirectionNoteTests
     [InlineData("123 Main St - across from park, Quận 1", "123 Main St, Quận 1")]
     [InlineData("456 High St, in front of school, Quận 2", "456 High St, Quận 2")]
     [InlineData("789 Broad St - beside hospital, Quận 3", "789 Broad St, Quận 3")]
+    [InlineData("gần chợ Bến Thành, 123 Lê Lợi", "123 Lê Lợi")]
+    [InlineData("đối diện trường học, 456 Nguyễn Trãi", "456 Nguyễn Trãi")]
+    [InlineData("phía sau nhà thờ, 789 Trần Hưng Đạo", "789 Trần Hưng Đạo")]
     public void Removes_direction_notes(string input, string expected)
         => AddressSanitizer.Sanitize(input).Should().Be(expected);
 }
@@ -218,6 +221,19 @@ public class FalsePositiveRegressionTests
     [InlineData("123 Đường Nam, Xã Giao Khẩu")]
     [InlineData("456 Callisto Tower, Phường 1")]
     [InlineData("789 Near East Plaza, Quận 2")]
+    [InlineData("Block P12, Quận 7")]
+    [InlineData("Tower Q1, Phường Bến Nghé")]
+    [InlineData("Khu P.12, Quận 7")]
+    [InlineData("123 Đường Gửi Bảo Vệ, Quận 1")]
+    [InlineData("456 Hẻm Nhận Hộ, Phường 5")]
+    [InlineData("789 Đường Để Trước, Phường 10")]
+    [InlineData("12 Đường Bỏ Ngoài, Phường 4")]
+    [InlineData("Đường Giao Tới, Quận 1")]
+    [InlineData("Đường Thank, Phường Thanks, Quận 1")]
+    [InlineData("123 Road, Near East Plaza, Quận 2")]
+    [InlineData("456 Road, Opposite House, Quận 7")]
+    [InlineData("789 Road, Behind Tower, Phường 1")]
+    [InlineData("101 Road, Beside Garden, Phường Thảo Điền")]
     public void Must_not_alter_valid_addresses(string input)
         => AddressSanitizer.Sanitize(input).Should().Be(input);
 }
